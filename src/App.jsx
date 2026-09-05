@@ -34,7 +34,7 @@ function App() {
         return
       }
       const { data, error: fetchError } = await supabase.from('leads').select('*').order('created_at', { ascending: false })
-      if (fetchError) setError('We could not load leads. Check the Supabase table and connection.')
+      if (fetchError) setError(fetchError.code === 'PGRST205' ? 'The Supabase leads table is missing. Run supabase/schema.sql in the Supabase SQL Editor.' : 'We could not load leads. Check the Supabase table and connection.')
       else setLeads(data ?? [])
       setIsLoading(false)
     }
@@ -68,27 +68,41 @@ function App() {
     if (!form.name.trim() || !form.email.trim() || !form.enquiry.trim()) {
       setError('Name, email, and enquiry are required.'); return
     }
-    if (!supabase) return
+    if (!supabase) {
+      setError('Supabase is not configured. Set a valid project URL and public anon key in .env.local, then restart Vite.')
+      return
+    }
     setSaving(true); setError('')
     const payload = { ...form, name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), enquiry: form.enquiry.trim() }
-    const response = editingLead
-      ? await supabase.from('leads').update(payload).eq('id', editingLead.id).select().single()
-      : await supabase.from('leads').insert(payload).select().single()
-    if (response.error) setError('We could not save this lead. Please try again.')
-    else {
-      setLeads((current) => editingLead ? current.map((lead) => lead.id === editingLead.id ? response.data : lead) : [response.data, ...current])
-      setFormOpen(false)
+    try {
+      const response = editingLead
+        ? await supabase.from('leads').update(payload).eq('id', editingLead.id).select().single()
+        : await supabase.from('leads').insert(payload).select().single()
+      if (response.error) setError(response.error.code === 'PGRST205' ? 'The Supabase leads table is missing. Run supabase/schema.sql in the Supabase SQL Editor.' : 'We could not save this lead. Check the Supabase table permissions and try again.')
+      else {
+        setLeads((current) => editingLead ? current.map((lead) => lead.id === editingLead.id ? response.data : lead) : [response.data, ...current])
+        setFormOpen(false)
+      }
+    } catch {
+      setError('We could not reach Supabase. Check your project URL and network connection.')
     }
     setSaving(false)
   }
 
   async function deleteLead(lead) {
     if (!window.confirm(`Delete the lead for ${lead.name}?`)) return
-    if (!supabase) return
+    if (!supabase) {
+      setError('Supabase is not configured. Set a valid project URL and public anon key in .env.local, then restart Vite.')
+      return
+    }
     setDeletingId(lead.id); setError('')
-    const { error: deleteError } = await supabase.from('leads').delete().eq('id', lead.id)
-    if (deleteError) setError('We could not delete this lead. Please try again.')
-    else setLeads((current) => current.filter((item) => item.id !== lead.id))
+    try {
+      const { error: deleteError } = await supabase.from('leads').delete().eq('id', lead.id)
+      if (deleteError) setError('We could not delete this lead. Check the Supabase table permissions and try again.')
+      else setLeads((current) => current.filter((item) => item.id !== lead.id))
+    } catch {
+      setError('We could not reach Supabase. Check your project URL and network connection.')
+    }
     setDeletingId(null)
   }
 
