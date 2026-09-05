@@ -5,7 +5,7 @@ LeadTrack is a single-page React/Vite enquiry tracker backed by Supabase Postgre
 ## Local setup
 
 1. Run `npm install`.
-2. Copy `.env.example` to `.env`.
+2. Open `.env.local`.
 3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the public values from your Supabase project.
 4. Run `supabase/schema.sql` in the Supabase SQL editor.
 5. Run `npm run dev`.
