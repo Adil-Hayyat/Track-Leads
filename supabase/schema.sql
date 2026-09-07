@@ -11,7 +11,16 @@ create table public.leads (
 
 alter table public.leads enable row level security;
 
-create policy "Allow public lead reads" on public.leads for select to anon using (true);
-create policy "Allow public lead inserts" on public.leads for insert to anon with check (true);
-create policy "Allow public lead updates" on public.leads for update to anon using (true) with check (true);
-create policy "Allow public lead deletes" on public.leads for delete to anon using (true);
+drop policy if exists "Allow public lead reads" on public.leads;
+drop policy if exists "Allow public lead inserts" on public.leads;
+drop policy if exists "Allow public lead updates" on public.leads;
+drop policy if exists "Allow public lead deletes" on public.leads;
+drop policy if exists "Allow authenticated lead reads" on public.leads;
+drop policy if exists "Allow authenticated lead inserts" on public.leads;
+drop policy if exists "Allow authenticated lead updates" on public.leads;
+drop policy if exists "Allow authenticated lead deletes" on public.leads;
+
+create policy "Allow authenticated lead reads" on public.leads for select to authenticated using (true);
+create policy "Allow authenticated lead inserts" on public.leads for insert to authenticated with check (true);
+create policy "Allow authenticated lead updates" on public.leads for update to authenticated using (true) with check (true);
+create policy "Allow authenticated lead deletes" on public.leads for delete to authenticated using (true);
