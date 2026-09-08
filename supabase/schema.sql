@@ -12,11 +12,28 @@ create table public.leads (
 alter table public.leads enable row level security;
 
 drop policy if exists "Allow public lead reads" on public.leads;
-drop policy if exists "Allow public lead inserts" on public.leads;
+do $$
+declare
+  policy_record record;
+begin
+  for policy_record in
+    select policyname
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'leads'
+      and cmd = 'INSERT'
+      and (roles @> array['anon']::name[] or roles @> array['public']::name[])
+  loop
+    execute format('drop policy if exists %I on public.leads', policy_record.policyname);
+  end loop;
+end
+$$;
+
 drop policy if exists "Allow public lead updates" on public.leads;
 drop policy if exists "Allow public lead deletes" on public.leads;
 drop policy if exists "Allow authenticated lead reads" on public.leads;
 drop policy if exists "Allow authenticated lead inserts" on public.leads;
+drop policy if exists "authenticated_users_can_create_leads" on public.leads;
 drop policy if exists "Allow authenticated lead updates" on public.leads;
 drop policy if exists "Allow authenticated lead deletes" on public.leads;
 
